@@ -1,6 +1,8 @@
 <?php
 
 $pair = "ETHBTC";
+
+
 if(strlen($argv[1])) 
     $pair = $argv[1];
 
@@ -49,30 +51,72 @@ while (true) {
             continue;
         }
     } else {
-        // echo $msg->payload, "\n";
+		// echo $msg->payload, "\n";
 
-        $candle = json_decode($msg->payload);
-        // Sanity check: time should always go UP.
-        if($candle[0] < $prev_candle) {
-            echo "hmmm... current candle ($candle[0]) older than previous ($prev_candle).\n";
-            continue;
-        }
-        $prev_candle = $candle[0];
-        echo "$n: ".$msg->payload."\n";
-        $ema_array[] = $candle[CS_CLOSE_PRICE];
-        if(count($ema_array) > 21) {
+		$candle = json_decode($msg->payload);
+		// Sanity check: time should always go UP.
+		if($candle[0] < $prev_candle) {
+			echo "hmmm... current candle ($candle[0]) older than previous ($prev_candle).\n";
+			continue;
+		}
+		$prev_candle = $candle[0];
+		echo "$n: ".$msg->payload."\n";
+   
+   
+   
+		//Add CS_CLOSE_TIME to indicators
+			//$indicators['CS_CLOSE_TIME'] = $candle[CS_CLOSE_TIME];
 
-            array_shift($ema_array);
-            $ema = array();
-            $ema['21'] = end(trader_ema($ema_array,21));
-            $ema['13'] = end(trader_ema($ema_array,13));
-            $ema['8'] = end(trader_ema($ema_array,8));
-            echo print_r($ema,true)." cnt=".count($ema_array)."\n";
-            $indicators['CS_CLOSE_TIME'] = $candle[CS_CLOSE_TIME];
-            $indicators['ema'] = $ema;
-            produce_indicators($rk_p, "indicators.".$pair.".1m", json_encode($indicators));
-            sleep(0.1);
-        }
+   
+   		//Add MACD to indicators
+			// trader_macd
+			// array trader_macd ( array $real [, int $fastPeriod [, int $slowPeriod [, int $signalPeriod ]]] )
+			// 
+   		
+   		//Classify Candlesticks
+			//Trader has many classifiers of the candlesticks. I think we should create an array with candlesticks, and then test with all CDL functions if the pattern applies. Eg.:
+			// array trader_cdl2crows ( array $open , array $high , array $low , array $close )
+			//This function requires the candlestick data, and will return an array. However, I don't know how to test it yet.
+   		
+			//$indicators['classified_candlestick'] = $candlestick_classification;
+			// 
+   
+   		//Add Percentiles to indicators --> Creates an array of percentiles at a certain point
+			// 		$percentile_period = 100;
+			// 		$percentile_array[] = $candle[CS_CLOSE_PRICE];
+			// 		if(count($percentile_array) > $percentile_period) {
+			// 
+			// 			array_shift($ema_array);
+			// 			//finish from here
+			// 		}
+   
+   		//Determines at what percentile value the price current is
+   		
+   
+   
+		//Add EMA (8-21) to indicators 
+		$ema_max_period = 21;
+		$ema_min_period = 8;
+		$ema_array[] = $candle[CS_CLOSE_PRICE];
+		if(count($ema_array) > $ema_max_period) {
+
+			array_shift($ema_array);
+			$ema = array();
+
+			for($ema_period = $ema_min_period; $ema_period<=$ema_max_period; $ema_period++;){
+				$ema[$ema_period] = end(trader_ema($ema_array,$ema_period));
+			} 
+		
+			echo print_r($ema,true)." cnt=".count($ema_array)."\n";
+			$indicators['CS_CLOSE_TIME'] = $candle[CS_CLOSE_TIME];   //place this to other section
+			$indicators['ema'] = $ema;
+			produce_indicators($rk_p, "indicators.".$pair.".1m", json_encode($indicators)); //place this to other section
+			sleep(0.1); //place this to other section
+		}
+	
+		//Produce indicators
+			//produce_indicators($rk_p, "indicators.".$pair.".1m", json_encode($indicators)); //place this to other section
+			//sleep(0.1); //place this to other section
     }
 }
 
